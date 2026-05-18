@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZOVA — Personal Intelligence Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080808;
+    --bg-panel: #0d0d0d;
+    --bg-card: #111;
+    --accent: #2979ff;
+    --accent-dim: rgba(41,121,255,0.15);
+    --accent-glow: rgba(41,121,255,0.4);
+    --white: #f0f0f0;
+    --muted: #555;
+    --border: #1e1e1e;
+    --border2: #252525;
+    --success: #00e5a0;
+    --danger: #ff4444;
+    --warn: #ff9900;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Syne', sans-serif;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(41,121,255,0.3); border-radius: 2px; }
+  ::selection { background: rgba(41,121,255,0.3); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes pulse-ring {
+    0%, 100% { box-shadow: 0 0 20px rgba(41,121,255,0.25), 0 0 60px rgba(41,121,255,0.08); }
+    50% { box-shadow: 0 0 40px rgba(41,121,255,0.5), 0 0 120px rgba(41,121,255,0.15); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes shimmer {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slide-right {
+    from { opacity: 0; transform: translateX(-16px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes fade-out {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(1.04); }
+  }
+  @keyframes typing-dot {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes bar-fill {
+    from { width: 0; }
+    to { width: var(--w); }
+  }
+  @keyframes glow-pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  /* ── LANDING ── */
+  #landing {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: #080808; z-index: 1000;
+    overflow: hidden;
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  #landing.exit { animation: fade-out 0.7s ease forwards; pointer-events: none; }
+
+  #particle-canvas {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+  }
+
+  .landing-glow {
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(41,121,255,0.07) 0%, transparent 70%);
+    animation: pulse-ring 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .logo-ring-wrap {
+    position: relative; z-index: 1;
+    margin-bottom: 36px;
+    animation: float 7s ease-in-out infinite;
+  }
+  .logo-ring {
+    width: 84px; height: 84px; border-radius: 50%;
+    border: 1px solid rgba(41,121,255,0.45);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    animation: pulse-ring 3s ease-in-out infinite;
+  }
+  .logo-ring-outer {
+    position: absolute; inset: -10px; border-radius: 50%;
+    border: 1px solid rgba(41,121,255,0.12);
+    animation: spin-slow 14s linear infinite;
+  }
+  .logo-ring-dot {
+    position: absolute; top: -4px; left: 50%; transform: translateX(-50%);
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px rgba(41,121,255,0.9);
+  }
+  .logo-z {
+    font-size: 28px; font-weight: 800; color: var(--white);
+    letter-spacing: -0.02em;
+  }
+
+  .landing-wordmark {
+    position: relative; z-index: 1; text-align: center;
+  }
+  .landing-title {
+    font-size: clamp(60px, 10vw, 96px);
+    font-weight: 800; letter-spacing: -0.04em;
+    color: var(--white); line-height: 1; margin-bottom: 16px;
+    text-shadow: 0 0 80px rgba(41,121,255,0.18);
+  }
+  .landing-tagline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: #444;
+    margin-bottom: 52px;
+    animation: shimmer 3.5s ease-in-out infinite;
+  }
+  .landing-btn {
+    background: transparent;
+    border: 1px solid rgba(41,121,255,0.55);
+    border-radius: 100px; color: var(--white);
+    cursor: pointer; font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.07em; padding: 15px 44px;
+    transition: all 0.3s; position: relative;
+    animation: pulse-ring 3s ease-in-out infinite;
+    text-transform: uppercase;
+  }
+  .landing-btn:hover {
+    background: rgba(41,121,255,0.14);
+    border-color: rgba(41,121,255,0.9);
+    box-shadow: 0 0 30px rgba(41,121,255,0.25);
+  }
+  .landing-version {
+    position: absolute; bottom: 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: #2a2a2a;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    z-index: 1;
+  }
+
+  /* ── APP SHELL ── */
+  #app {
+    display: none; flex-direction: column;
+    height: 100vh; overflow: hidden;
+    animation: fade-in 0.5s ease;
+  }
+  #app.visible { display: flex; }
+
+  /* ── TOP NAV ── */
+  #topnav {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(8,8,8,0.97);
+    backdrop-filter: blur(24px);
+    flex-shrink: 0; height: 52px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .nav-left { display: flex; align-items: center; gap: 2px; }
+  .nav-logo {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 1px solid rgba(41,121,255,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800; color: var(--white);
+    margin-right: 10px; flex-shrink: 0;
+  }
+  .tab-btn {
+    background: none; border: none; cursor: pointer;
+    padding: 0 18px; height: 52px;
+    font-family: 'Syne', sans-serif; font-size: 11px;
+    font-weight: 600; color: var(--muted);
+    transition: color 0.2s; position: relative;
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .tab-btn:hover { color: var(--white); }
+  .tab-btn.active { color: var(--white); }
+  .tab-btn.active::after {
+    content: ''; position: absolute;
+    bottom: 0; left: 14px; right: 14px;
+    height: 2px; background: var(--accent);
+    box-shadow: 0 0 8px rgba(41,121,255,0.7);
+    border-radius: 2px 2px 0 0;
+  }
+  .nav-right {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .nav-memory-pill {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--accent);
+    background: rgba(41,121,255,0.08);
+    border: 1px solid rgba(41,121,255,0.2);
+    border-radius: 100px; padding: 4px 10px;
+  }
+  .nav-memory-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--accent);
+    animation: shimmer 2s infinite;
+  }
+  .nav-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 1px solid rgba(41,121,255,0.3);
+    background: rgba(41,121,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; cursor: pointer; color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* ── CONTENT AREA ── */
+  #content {
+    flex: 1; overflow: hidden;
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  .tab-panel {
+    display: none; flex: 1; overflow-y: auto;
+    animation: slide-up 0.3s ease;
+    height: 100%; min-height: 0;
+  }
+  .tab-panel.active { display: flex; flex-direction: column; }
+  /* Chat is special — internal scroll managed by #chat-messages */
+  #tab-chat { overflow: hidden !important; }
+  .panel-inner {
+    max-width: 900px; width: 100%;
+    margin: 0 auto; padding: 32px 32px;
+  }
+
+  /* ── SECTION HEADER ── */
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: #3a3a3a;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .panel-title {
+    font-size: 24px; font-weight: 700;
+    letter-spacing: -0.025em; margin-bottom: 4px;
+  }
+  .panel-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--muted); margin-bottom: 28px;
+  }
+
+  /* ── CARDS & PANELS ── */
+  .glass {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .metric-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px; margin-bottom: 28px;
+  }
+  .metric-card {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 18px 16px;
+    text-align: center;
+    transition: border-color 0.2s;
+  }
+  .metric-card:hover { border-color: rgba(41,121,255,0.25); }
+  .metric-icon { font-size: 18px; margin-bottom: 8px; }
+  .metric-val {
+    font-size: 28px; font-weight: 700;
+    letter-spacing: -0.03em; color: var(--white);
+    line-height: 1;
+  }
+  .metric-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; color: #3a3a3a;
+    text-transform: uppercase; letter-spacing: 0.09em;
+    margin-top: 6px;
+  }
+
+  .quick-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; margin-bottom: 28px;
+  }
+  .quick-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 22px;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 16px;
+    text-align: left;
+  }
+  .quick-card:hover {
+    border-color: rgba(41,121,255,0.3);
+    background: rgba(41,121,255,0.04);
+  }
+  .quick-icon { font-size: 22px; flex-shrink: 0; }
+  .quick-name {
+    font-size: 14px; font-weight: 600;
+    color: var(--white); margin-bottom: 3px;
+  }
+  .quick-desc {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--muted);
+  }
+
+  /* ── TEACHING PILLS ── */
+  .teaching-item {
+    background: rgba(41,121,255,0.04);
+    border: 1px solid rgba(41,121,255,0.1);
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 13px; color: #aaa; font-style: italic;
+    margin-bottom: 8px; animation: slide-right 0.2s ease;
+  }
+
+  /* ── INPUTS ── */
+  .zova-input {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px; color: var(--white);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px; outline: none; padding: 11px 15px;
+    width: 100%; resize: none;
+    transition: border-color 0.2s;
+  }
+  .zova-input:focus { border-color: rgba(41,121,255,0.4); }
+  .zova-input::placeholder { color: #333; }
+
+  .send-btn {
+    background: var(--accent); border: none;
+    border-radius: 8px; cursor: pointer;
+    color: white; font-family: 'Syne', sans-serif;
+    font-size: 12px; font-weight: 700;
+    padding: 10px 22px; transition: all 0.2s;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .send-btn:hover:not(:disabled) {
+    background: #4a8dff;
+    box-shadow: 0 0 20px rgba(41,121,255,0.4);
+  }
+  .send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ── CHAT ── */
+  #chat-panel { display: none; height: 100%; }
+  #chat-panel.active { display: flex; flex-direction: column; }
+  #chat-messages {
+    flex: 1; overflow-y: auto; min-height: 0;
+    padding: 28px 32px;
+  }
+  .chat-inner { max-width: 760px; margin: 0 auto; }
+  .msg-wrap { margin-bottom: 22px; animation: slide-up 0.25s ease; }
+  .msg-user {
+    display: flex; justify-content: flex-end;
+  }
+  .msg-user-bubble {
+    background: rgba(41,121,255,0.12);
+    border: 1px solid rgba(41,121,255,0.2);
+    border-radius: 14px 14px 4px 14px;
+    padding: 11px 16px; max-width: 72%;
+    font-size: 14px; line-height: 1.65; color: var(--white);
+  }
+  .msg-ai { display: flex; flex-direction: column; }
+  .msg-ai-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  }
+  .zova-avatar {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 1px solid rgba(41,121,255,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 800; color: var(--accent);
+    flex-shrink: 0;
+  }
+  .zova-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; color: #333;
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .msg-ai-body {
+    font-size: 14px; line-height: 1.75; color: #d8d8d8;
+    max-width: 88%;
+  }
+  .msg-ai-body p { margin-bottom: 10px; }
+  .msg-ai-body ul { padding-left: 18px; margin-bottom: 10px; }
+  .msg-ai-body li { margin-bottom: 4px; line-height: 1.6; }
+  .msg-ai-body code {
+    background: rgba(41,121,255,0.1); border: 1px solid rgba(41,121,255,0.2);
+    border-radius: 4px; padding: 1px 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em; color: #7ab3ff;
+  }
+  .msg-ai-body pre {
+    background: #090909; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px; margin-bottom: 10px;
+    overflow-x: auto;
+  }
+  .msg-ai-body pre code { background: none; border: none; padding: 0; color: #a0c4ff; }
+  .msg-ai-body strong { color: var(--white); font-weight: 600; }
+  .msg-ai-body h1, .msg-ai-body h2, .msg-ai-body h3 {
+    color: var(--white); font-weight: 700; margin-bottom: 8px; margin-top: 14px;
+  }
+
+  .feedback-row { display: flex; gap: 6px; margin-top: 10px; }
+  .fb-btn {
+    background: none; border: 1px solid var(--border);
+    border-radius: 5px; cursor: pointer; color: #444;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; padding: 4px 10px;
+    transition: all 0.15s;
+  }
+  .fb-btn:hover { border-color: rgba(41,121,255,0.4); color: var(--white); }
+  .fb-btn.accept { border-color: rgba(0,229,160,0.4); color: var(--success); }
+  .fb-btn.reject { border-color: rgba(255,68,68,0.4); color: var(--danger); }
+
+  .typing-indicator {
+    display: flex; gap: 5px; padding: 8px 0; align-items: center;
+  }
+  .typing-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(41,121,255,0.5);
+  }
+  .typing-dot:nth-child(1) { animation: typing-dot 1.2s ease-in-out 0s infinite; }
+  .typing-dot:nth-child(2) { animation: typing-dot 1.2s ease-in-out 0.2s infinite; }
+  .typing-dot:nth-child(3) { animation: typing-dot 1.2s ease-in-out 0.4s infinite; }
+
+  #chat-input-area {
+    border-top: 1px solid var(--border);
+    padding: 16px 32px; flex-shrink: 0;
+  }
+  .chat-input-row {
+    max-width: 760px; margin: 0 auto;
+    display: flex; gap: 10px; align-items: flex-end;
+  }
+  .chat-hint {
+    max-width: 760px; margin: 6px auto 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; color: #252525; letter-spacing: 0.06em;
+  }
+
+  /* ── MODE PILLS ── */
+  .mode-row { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+  .mode-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 7px; cursor: pointer;
+    font-family: 'Syne', sans-serif; font-size: 11px;
+    font-weight: 600; padding: 7px 14px;
+    color: var(--muted); transition: all 0.2s;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .mode-btn:hover { color: var(--white); border-color: #333; }
+  .mode-btn.active {
+    background: rgba(41,121,255,0.14);
+    border-color: rgba(41,121,255,0.5);
+    color: #7ab3ff;
+  }
+
+  /* ── WRITE ── */
+  .write-grid { display: grid; gap: 16px; }
+  .write-grid.split { grid-template-columns: 1fr 1fr; }
+  .col-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: #3a3a3a;
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .result-box {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px; min-height: 200px; font-size: 13px;
+    line-height: 1.75; color: #ccc; overflow-y: auto;
+    max-height: 400px;
+  }
+  .result-actions { display: flex; gap: 6px; }
+
+  /* ── RESEARCH ── */
+  .research-loader {
+    text-align: center; padding: 60px 0;
+  }
+  .spinner {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid rgba(41,121,255,0.2);
+    border-top-color: var(--accent);
+    animation: spin-slow 1.5s linear infinite;
+    margin: 0 auto 16px;
+  }
+  .spinner-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: #3a3a3a;
+    animation: shimmer 1.5s infinite;
+  }
+  .research-result { animation: slide-up 0.4s ease; }
+  .research-header {
+    background: rgba(41,121,255,0.04);
+    border: 1px solid rgba(41,121,255,0.12);
+    border-radius: 12px; padding: 22px 24px; margin-bottom: 18px;
+  }
+  .research-title-row {
+    display: flex; justify-content: space-between;
+    align-items: flex-start; margin-bottom: 12px; gap: 12px;
+  }
+  .research-title { font-size: 17px; font-weight: 700; }
+  .research-summary { color: #999; font-size: 13px; line-height: 1.7; }
+  .tag {
+    background: rgba(41,121,255,0.1);
+    border: 1px solid rgba(41,121,255,0.2);
+    border-radius: 100px; color: #7ab3ff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; padding: 3px 10px; display: inline-block;
+    white-space: nowrap;
+  }
+  .tag.green { background: rgba(0,229,160,0.08); border-color: rgba(0,229,160,0.2); color: var(--success); }
+  .tag.amber { background: rgba(255,153,0,0.08); border-color: rgba(255,153,0,0.2); color: var(--warn); }
+  .insights-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+  .insight-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px;
+  }
+  .insight-num {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: rgba(41,121,255,0.18);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; color: var(--accent); flex-shrink: 0; margin-top: 2px;
+    font-weight: 700;
+  }
+  .insight-text { font-size: 13px; color: #ccc; line-height: 1.6; }
+  .accordion {
+    border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden; margin-bottom: 10px;
+  }
+  .accordion-btn {
+    width: 100%; background: rgba(255,255,255,0.02);
+    border: none; padding: 13px 18px; cursor: pointer;
+    display: flex; justify-content: space-between;
+    align-items: center; color: var(--white);
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
+    transition: background 0.15s;
+  }
+  .accordion-btn:hover { background: rgba(255,255,255,0.04); }
+  .accordion-chevron { color: var(--muted); font-size: 14px; transition: transform 0.2s; }
+  .accordion-chevron.open { transform: rotate(45deg); }
+  .accordion-body {
+    display: none; padding: 0 18px 16px;
+    font-size: 13px; color: #999; line-height: 1.7;
+  }
+  .accordion-body.open { display: block; animation: slide-up 0.2s ease; }
+  .sources-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+
+  /* ── TEACH ── */
+  .cat-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+  .suggestion-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+  .suggestion-pill {
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 100px; color: var(--muted); cursor: pointer;
+    font-family: 'Syne', sans-serif; font-size: 11px;
+    padding: 6px 14px; transition: all 0.18s;
+  }
+  .suggestion-pill:hover { border-color: rgba(41,121,255,0.3); color: #aaa; }
+  .teachings-list { display: flex; flex-direction: column; gap: 8px; }
+  .teaching-row {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 16px; animation: slide-up 0.2s ease;
+  }
+  .teaching-text { font-size: 13px; color: #ddd; margin-bottom: 5px; }
+  .teaching-meta { display: flex; gap: 8px; align-items: center; }
+  .teaching-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; color: #2e2e2e;
+  }
+  .teaching-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: rgba(41,121,255,0.35); flex-shrink: 0; margin-top: 5px;
+  }
+
+  /* ── PROFILE ── */
+  .profile-hero {
+    background: rgba(41,121,255,0.04);
+    border: 1px solid rgba(41,121,255,0.12);
+    border-radius: 16px; padding: 28px 30px;
+    display: flex; align-items: center; gap: 28px;
+    margin-bottom: 22px;
+  }
+  .iq-ring { position: relative; flex-shrink: 0; }
+  .iq-inner {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .iq-val { font-size: 20px; font-weight: 700; line-height: 1; }
+  .iq-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px; color: var(--muted); margin-top: 2px;
+  }
+  .profile-status { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .profile-desc { color: var(--muted); font-size: 13px; line-height: 1.65; margin-bottom: 12px; }
+  .profile-tags { display: flex; gap: 7px; flex-wrap: wrap; }
+  .activity-list { margin-bottom: 22px; display: flex; flex-direction: column; gap: 10px; }
+  .activity-item {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 16px;
+  }
+  .activity-row {
+    display: flex; justify-content: space-between; margin-bottom: 8px;
+  }
+  .activity-name { font-size: 12px; color: #aaa; }
+  .activity-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
+  .bar-track {
+    height: 3px; background: #181818;
+    border-radius: 2px; overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), #7ab3ff);
+    box-shadow: 0 0 8px rgba(41,121,255,0.45);
+    transition: width 1s ease;
+  }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+  .stat-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border); border-radius: 10px; padding: 16px;
+  }
+  .stat-title {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    color: #3a3a3a; text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 10px;
+  }
+  .stat-big {
+    font-size: 32px; font-weight: 700; letter-spacing: -0.04em;
+    color: var(--white); line-height: 1;
+  }
+  .stat-big.blue { color: var(--accent); }
+  .stat-big.green { color: var(--success); }
+  .stat-sub { font-size: 11px; color: #3a3a3a; margin-top: 4px; }
+
+  /* ── API KEY MODAL ── */
+  #api-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85); z-index: 9999;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(8px);
+    animation: fade-in 0.2s ease;
+  }
+  #api-modal.visible { display: flex; }
+  .modal-box {
+    background: #0e0e0e; border: 1px solid #2a2a2a;
+    border-radius: 16px; padding: 36px 40px;
+    width: 440px; max-width: 90vw;
+    animation: slide-up 0.3s ease;
+  }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .modal-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--muted); margin-bottom: 24px; line-height: 1.6;
+  }
+  .modal-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: #444; text-transform: uppercase;
+    letter-spacing: 0.1em; margin-bottom: 8px;
+  }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-cancel {
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted); cursor: pointer;
+    font-family: 'Syne', sans-serif; font-size: 12px;
+    padding: 10px 20px; transition: all 0.2s;
+    font-weight: 600;
+  }
+  .modal-cancel:hover { color: var(--white); border-color: #333; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    background: #0e0e0e; border: 1px solid #252525;
+    border-radius: 100px; padding: 10px 20px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--white); z-index: 9999;
+    animation: slide-up 0.3s ease;
+    display: none; white-space: nowrap;
+  }
+  #toast.visible { display: block; }
+  #toast.green { border-color: rgba(0,229,160,0.3); color: var(--success); }
+  #toast.blue { border-color: rgba(41,121,255,0.3); color: var(--accent); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .metric-grid { grid-template-columns: repeat(2,1fr); }
+    .quick-grid { grid-template-columns: 1fr; }
+    .write-grid.split { grid-template-columns: 1fr; }
+    .stat-grid { grid-template-columns: 1fr; }
+    .profile-hero { flex-direction: column; text-align: center; }
+    #topnav { padding: 0 12px; }
+    .tab-btn { padding: 0 10px; font-size: 10px; }
+    .panel-inner { padding: 20px 16px; }
+    #chat-messages { padding: 16px; }
+    #chat-input-area { padding: 12px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ LANDING ════════════════════ -->
+<div id="landing">
+  <canvas id="particle-canvas"></canvas>
+  <div class="landing-glow"></div>
+
+  <div class="logo-ring-wrap">
+    <div class="logo-ring">
+      <div class="logo-ring-outer">
+        <div class="logo-ring-dot"></div>
+      </div>
+      <span class="logo-z">Z</span>
+    </div>
+  </div>
+
+  <div class="landing-wordmark">
+    <h1 class="landing-title">ZOVA</h1>
+    <p class="landing-tagline">Your AI that learns how you work</p>
+    <button class="landing-btn" onclick="enterApp()">Open ZOVA</button>
+  </div>
+
+  <p class="landing-version">Personal Intelligence Engine · v1.0</p>
+</div>
+
+<!-- ════════════════════ APP ════════════════════ -->
+<div id="app">
+  <!-- TOP NAV -->
+  <nav id="topnav">
+    <div class="nav-left">
+      <div class="nav-logo">Z</div>
+      <button class="tab-btn active" onclick="switchTab('home',this)">Home</button>
+      <button class="tab-btn" onclick="switchTab('chat',this)">Chat</button>
+      <button class="tab-btn" onclick="switchTab('write',this)">Write</button>
+      <button class="tab-btn" onclick="switchTab('research',this)">Research</button>
+      <button class="tab-btn" onclick="switchTab('teach',this)">Teach</button>
+      <button class="tab-btn" onclick="switchTab('profile',this)">Profile</button>
+    </div>
+    <div class="nav-right">
+      <div class="nav-memory-pill" id="memory-pill" style="display:none">
+        <div class="nav-memory-dot"></div>
+        <span id="memory-count">0</span> memories
+      </div>
+      <div class="nav-avatar" onclick="openApiModal()">U</div>
+    </div>
+  </nav>
+
+  <!-- API STATUS BANNER -->
+  <div id="api-banner" style="display:none;background:rgba(41,121,255,0.07);border-bottom:1px solid rgba(41,121,255,0.15);padding:8px 28px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#5a8aff;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;">
+    <span>⚡ Connect your Anthropic API key to enable live AI responses</span>
+    <button onclick="openApiModal()" style="background:rgba(41,121,255,0.2);border:1px solid rgba(41,121,255,0.4);border-radius:5px;color:#7ab3ff;font-family:'JetBrains Mono',monospace;font-size:10px;padding:4px 12px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(41,121,255,0.3)'" onmouseout="this.style.background='rgba(41,121,255,0.2)'">Connect →</button>
+  </div>
+  <div id="content">
+
+    <!-- HOME -->
+    <div id="tab-home" class="tab-panel active">
+      <div class="panel-inner">
+        <div class="section-label">Intelligence Engine · Active</div>
+        <h2 class="panel-title" id="home-greeting">Good morning.</h2>
+        <p class="panel-sub" id="home-desc">ZOVA is ready to learn. Start chatting or teach me your preferences.</p>
+
+        <div class="metric-grid">
+          <div class="metric-card"><div class="metric-icon">◈</div><div class="metric-val" id="stat-interactions">0</div><div class="metric-lbl">Interactions</div></div>
+          <div class="metric-card"><div class="metric-icon">◉</div><div class="metric-val" id="stat-memories">0</div><div class="metric-lbl">Memories</div></div>
+          <div class="metric-card"><div class="metric-icon">◎</div><div class="metric-val" id="stat-teachings">0</div><div class="metric-lbl">Teachings</div></div>
+          <div class="metric-card"><div class="metric-icon">◐</div><div class="metric-val" id="stat-adaptations">0</div><div class="metric-lbl">Adaptations</div></div>
+        </div>
+
+        <div class="section-label" style="margin-bottom:14px">Quick Access</div>
+        <div class="quick-grid">
+          <div class="quick-card" onclick="switchTabByName('chat')"><div class="quick-icon">💬</div><div><div class="quick-name">Start chatting</div><div class="quick-desc">Talk to ZOVA</div></div></div>
+          <div class="quick-card" onclick="switchTabByName('write')"><div class="quick-icon">✍️</div><div><div class="quick-name">Write something</div><div class="quick-desc">AI-assisted writing</div></div></div>
+          <div class="quick-card" onclick="switchTabByName('research')"><div class="quick-icon">🔍</div><div><div class="quick-name">Research a topic</div><div class="quick-desc">Deep intelligence</div></div></div>
+          <div class="quick-card" onclick="switchTabByName('teach')"><div class="quick-icon">🧠</div><div><div class="quick-name">Teach ZOVA</div><div class="quick-desc">Build your profile</div></div></div>
+        </div>
+
+        <div id="home-teachings-section" style="display:none">
+          <div class="section-label" style="margin-bottom:12px">Recent Teachings</div>
+          <div id="home-teachings"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div id="tab-chat" class="tab-panel" style="overflow:hidden;height:calc(100vh - 52px);">
+      <div id="chat-messages">
+        <div class="chat-inner" id="chat-inner">
+          <div class="msg-wrap">
+            <div class="msg-ai">
+              <div class="msg-ai-header">
+                <div class="zova-avatar">Z</div>
+                <span class="zova-label">ZOVA</span>
+              </div>
+              <div class="msg-ai-body">
+                Hello. I'm ZOVA — your adaptive intelligence engine. I learn from every exchange.<br>What would you like to explore?
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="chat-input-area">
+        <div class="chat-input-row">
+          <textarea id="chat-input" class="zova-input" rows="1" placeholder="Message ZOVA..." style="min-height:44px;max-height:140px;"></textarea>
+          <button class="send-btn" id="chat-send" onclick="sendChat()">Send</button>
+        </div>
+        <p class="chat-hint">↵ send · shift+↵ newline · feedback shapes ZOVA's learning</p>
+      </div>
+    </div>
+
+    <!-- WRITE -->
+    <div id="tab-write" class="tab-panel">
+      <div class="panel-inner">
+        <h2 class="panel-title">Write</h2>
+        <p class="panel-sub">AI writing adapted to your style</p>
+        <div class="mode-row">
+          <button class="mode-btn active" onclick="setWriteMode('draft',this)">Draft</button>
+          <button class="mode-btn" onclick="setWriteMode('rewrite',this)">Rewrite</button>
+          <button class="mode-btn" onclick="setWriteMode('summarize',this)">Summarize</button>
+          <button class="mode-btn" onclick="setWriteMode('email',this)">Email</button>
+          <button class="mode-btn" onclick="setWriteMode('report',this)">Report</button>
+        </div>
+        <div id="write-grid" class="write-grid">
+          <div>
+            <div class="col-label" id="write-input-label">Your Prompt</div>
+            <textarea id="write-input" class="zova-input" rows="8" placeholder="What do you want to write about?"></textarea>
+            <button class="send-btn" id="write-btn" onclick="generateWrite()" style="margin-top:12px;width:100%;">Generate Draft</button>
+          </div>
+          <div id="write-result-col" style="display:none">
+            <div class="col-label">
+              Result
+              <div class="result-actions">
+                <button class="fb-btn" id="write-accept" onclick="writeAccept()">✓ Accept</button>
+                <button class="fb-btn" id="write-reject" onclick="writeReject()">✗ Reject</button>
+                <button class="fb-btn" onclick="copyResult()">Copy</button>
+              </div>
+            </div>
+            <div class="result-box" id="write-result"></div>
+            <p id="write-accepted-msg" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--success);margin-top:8px;display:none">
+              ✓ Accepted — ZOVA learns your preferences
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESEARCH -->
+    <div id="tab-research" class="tab-panel">
+      <div class="panel-inner">
+        <h2 class="panel-title">Research</h2>
+        <p class="panel-sub">Deep intelligence synthesis</p>
+        <div style="display:flex;gap:10px;margin-bottom:28px">
+          <input id="research-input" class="zova-input" placeholder="What do you want to research?" style="flex:1">
+          <button class="send-btn" id="research-btn" onclick="doResearch()">Research</button>
+        </div>
+        <div id="research-body"></div>
+      </div>
+    </div>
+
+    <!-- TEACH -->
+    <div id="tab-teach" class="tab-panel">
+      <div class="panel-inner">
+        <h2 class="panel-title">Teach ZOVA</h2>
+        <p class="panel-sub">Every teaching permanently updates your intelligence profile</p>
+        <div class="cat-row" id="cat-row">
+          <button class="mode-btn active" onclick="setCat('style',this)">✍️ Writing Style</button>
+          <button class="mode-btn" onclick="setCat('workflow',this)">⚙️ Workflow</button>
+          <button class="mode-btn" onclick="setCat('tone',this)">🎯 Tone</button>
+          <button class="mode-btn" onclick="setCat('format',this)">📋 Format</button>
+          <button class="mode-btn" onclick="setCat('domain',this)">🔬 Domain</button>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:22px">
+          <input id="teach-input" class="zova-input" placeholder="Teach ZOVA something about how you work..." style="flex:1">
+          <button class="send-btn" onclick="addTeaching()">Teach</button>
+        </div>
+        <div class="section-label" style="margin-bottom:12px">Suggestions</div>
+        <div class="suggestion-row">
+          <button class="suggestion-pill" onclick="fillTeach(this)">I prefer concise, direct writing without filler</button>
+          <button class="suggestion-pill" onclick="fillTeach(this)">Always structure plans in numbered phases</button>
+          <button class="suggestion-pill" onclick="fillTeach(this)">Use technical language when discussing engineering</button>
+          <button class="suggestion-pill" onclick="fillTeach(this)">I like analytical explanations with examples</button>
+          <button class="suggestion-pill" onclick="fillTeach(this)">Avoid using bullet points excessively</button>
+          <button class="suggestion-pill" onclick="fillTeach(this)">When writing emails, keep them under 150 words</button>
+          <button class="suggestion-pill" onclick="fillTeach(this)">I work in a startup — be practical and direct</button>
+          <button class="suggestion-pill" onclick="fillTeach(this)">Format code examples with detailed comments</button>
+        </div>
+        <div id="teachings-history" style="display:none">
+          <div class="section-label" style="margin-bottom:14px">Stored Teachings (<span id="teachings-count">0</span>)</div>
+          <div class="teachings-list" id="teachings-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="tab-profile" class="tab-panel">
+      <div class="panel-inner">
+        <h2 class="panel-title">Intelligence Profile</h2>
+        <p class="panel-sub">Your adaptive cognitive fingerprint</p>
+        <div class="profile-hero">
+          <div class="iq-ring">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="32" fill="none" stroke="#181818" stroke-width="4"/>
+              <circle id="iq-arc" cx="40" cy="40" r="32" fill="none" stroke="#2979ff" stroke-width="4"
+                stroke-dasharray="0 201" stroke-linecap="round" transform="rotate(-90 40 40)"
+                style="filter:drop-shadow(0 0 6px rgba(41,121,255,0.5));transition:stroke-dasharray 1s ease"/>
+            </svg>
+            <div class="iq-inner">
+              <div class="iq-val" id="iq-val">0</div>
+              <div class="iq-lbl">IQ</div>
+            </div>
+          </div>
+          <div>
+            <div class="profile-status" id="profile-status">Unconfigured</div>
+            <p class="profile-desc" id="profile-desc">Teach ZOVA your preferences to begin adaptive personalization.</p>
+            <div class="profile-tags" id="profile-tags"></div>
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-bottom:14px">Activity</div>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="activity-row"><span class="activity-name">Chat Interactions</span><span class="activity-val" id="act-chat">0</span></div>
+            <div class="bar-track"><div class="bar-fill" id="bar-chat" style="width:0%"></div></div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-row"><span class="activity-name">Writing Sessions</span><span class="activity-val" id="act-write">0</span></div>
+            <div class="bar-track"><div class="bar-fill" id="bar-write" style="width:0%"></div></div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-row"><span class="activity-name">Research Sessions</span><span class="activity-val" id="act-research">0</span></div>
+            <div class="bar-track"><div class="bar-fill" id="bar-research" style="width:0%"></div></div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-row"><span class="activity-name">Teachings Given</span><span class="activity-val" id="act-teach">0</span></div>
+            <div class="bar-track"><div class="bar-fill" id="bar-teach" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-title">Acceptance Rate</div>
+            <div class="stat-big green" id="accept-rate">—</div>
+            <div class="stat-sub" id="accept-detail">No feedback yet</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Learning Velocity</div>
+            <div class="stat-big blue" id="learn-vel">Idle</div>
+            <div class="stat-sub" id="learn-detail">0 explicit preferences</div>
+          </div>
+        </div>
+
+        <div id="profile-prefs-section" style="display:none">
+          <div class="section-label" style="margin-bottom:14px">Learned Preferences</div>
+          <div id="profile-prefs" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end #content -->
+</div><!-- end #app -->
+
+<!-- API KEY MODAL -->
+<div id="api-modal">
+  <div class="modal-box">
+    <h3 class="modal-title">Connect to Claude</h3>
+    <p class="modal-sub">Enter your Anthropic API key to enable live AI responses. Your key is stored locally only.</p>
+    <div class="modal-label">Anthropic API Key</div>
+    <input id="api-key-input" class="zova-input" type="password" placeholder="sk-ant-..." style="margin-bottom:0">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#2a2a2a;margin-top:8px;line-height:1.6">
+      Get your key at console.anthropic.com · Never shared · Stays in your browser
+    </div>
+    <div class="modal-actions">
+      <button class="send-btn" onclick="saveApiKey()" style="flex:1">Connect</button>
+      <button class="modal-cancel" onclick="closeApiModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// ZOVA STATE
+// ══════════════════════════════════════════════
+const STATE = {
+  apiKey: localStorage.getItem('zova-apikey') || '',
+  teachings: JSON.parse(localStorage.getItem('zova-teachings') || '[]'),
+  profile: JSON.parse(localStorage.getItem('zova-profile') || JSON.stringify({
+    interactions: 0, memories: 0, adaptations: 0,
+    accepts: 0, rejects: 0, writes: 0, researches: 0
+  })),
+  currentWriteMode: 'draft',
+  currentCat: 'style',
+  chatLoading: false,
+  writeLoading: false,
+  researchLoading: false,
+  lastWriteResult: '',
+};
+
+const CATS = { style:'Writing Style', workflow:'Workflow', tone:'Tone', format:'Format', domain:'Domain' };
+
+function saveState() {
+  localStorage.setItem('zova-teachings', JSON.stringify(STATE.teachings));
+  localStorage.setItem('zova-profile', JSON.stringify(STATE.profile));
+}
+
+// ══════════════════════════════════════════════
+// PARTICLE CANVAS
+// ══════════════════════════════════════════════
+(function initParticles() {
+  const canvas = document.getElementById('particle-canvas');
+  const ctx = canvas.getContext('2d');
+  function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const particles = Array.from({length:55}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 1.4 + 0.3,
+    vx: (Math.random()-.5)*.28, vy: (Math.random()-.5)*.28,
+    op: Math.random()*.35+.08
+  }));
+
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for(let i=0;i<particles.length;i++) {
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      if(p.x<0)p.x=canvas.width; if(p.x>canvas.width)p.x=0;
+      if(p.y<0)p.y=canvas.height; if(p.y>canvas.height)p.y=0;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(41,121,255,${p.op})`; ctx.fill();
+      for(let j=i+1;j<particles.length;j++) {
+        const q=particles[j];
+        const d=Math.hypot(p.x-q.x,p.y-q.y);
+        if(d<110){
+          ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y);
+          ctx.strokeStyle=`rgba(41,121,255,${.07*(1-d/110)})`;
+          ctx.lineWidth=.5; ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ══════════════════════════════════════════════
+// LANDING → APP
+// ══════════════════════════════════════════════
+function enterApp() {
+  const landing = document.getElementById('landing');
+  landing.classList.add('exit');
+  setTimeout(() => {
+    landing.style.display = 'none';
+    const app = document.getElementById('app');
+    app.classList.add('visible');
+    updateAllUI();
+    renderTeachings();
+    if (!STATE.apiKey) {
+      document.getElementById('api-banner').style.display = 'flex';
+      setTimeout(openApiModal, 700);
+    }
+  }, 650);
+}
+
+// ══════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const panel = document.getElementById('tab-' + name);
+  if (panel) {
+    panel.classList.add('active');
+    // Scroll non-chat panels back to top on switch
+    if (name !== 'chat') panel.scrollTop = 0;
+  }
+  if (name === 'profile') updateProfileUI();
+  if (name === 'home') updateHomeUI();
+}
+
+function switchTabByName(name) {
+  const btns = document.querySelectorAll('.tab-btn');
+  btns.forEach(btn => {
+    if (btn.textContent.trim().toLowerCase() === name.toLowerCase()) {
+      switchTab(name, btn);
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+// MARKDOWN RENDERER
+// ══════════════════════════════════════════════
+function md(text) {
+  if (!text) return '';
+  let t = text
+    .replace(/```(\w*)\n?([\s\S]*?)```/g, (_,l,c) => `<pre><code>${c.replace(/</g,'&lt;')}</code></pre>`)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/^[-*] (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*?<\/li>\n?)+/gs, m => `<ul>${m}</ul>`)
+    .split('\n\n').map(p => p.startsWith('<') ? p : `<p>${p}</p>`).join('');
+  return t;
+}
+
+// ══════════════════════════════════════════════
+// API CALL
+// ══════════════════════════════════════════════
+async function callClaude(messages, system, onStream, onDone) {
+  if (!STATE.apiKey) {
+    onDone('⚠️ No API key connected. Click the avatar (top right) to add your Anthropic API key and enable live AI.');
+    openApiModal();
+    return;
+  }
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': STATE.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system,
+        messages
+      })
+    });
+    const data = await res.json();
+    if (data.error) {
+      onDone(`⚠️ API Error: ${data.error.message}`);
+      return;
+    }
+    const full = data.content?.map(b => b.text || '').join('') || 'No response received.';
+    // Simulate smooth streaming for premium feel
+    let i = 0;
+    function chunk() {
+      if (i < full.length) {
+        onStream(full.slice(0, Math.min(i + 5, full.length)));
+        i += 5;
+        setTimeout(chunk, 9);
+      } else { onStream(full); onDone(full); }
+    }
+    chunk();
+  } catch(e) {
+    onDone('⚠️ Connection error. Check your API key and network, then try again.');
+  }
+}
+
+function buildSystem() {
+  const t = STATE.teachings.map(t => `- ${t.text}`).join('\n') || 'None yet.';
+  return `You are ZOVA, a personal intelligence engine. You are sharp, precise, and adaptive.
+
+User's learned preferences:
+${t}
+
+Rules:
+- Be concise and intelligent. No filler.
+- Apply preferences naturally.
+- Format with markdown when helpful.
+- Never introduce yourself as an AI unless asked.`;
+}
+
+// ══════════════════════════════════════════════
+// CHAT
+// ══════════════════════════════════════════════
+const chatHistory = [];
+
+document.getElementById('chat-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+});
+
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || STATE.chatLoading) return;
+  input.value = '';
+  STATE.chatLoading = true;
+  document.getElementById('chat-send').disabled = true;
+
+  chatHistory.push({ role: 'user', content: text });
+  appendUserMsg(text);
+  const aiId = appendAiMsg('', true);
+  scrollChat();
+
+  callClaude(chatHistory, buildSystem(),
+    chunk => { updateAiMsg(aiId, chunk); scrollChat(); },
+    final => {
+      chatHistory.push({ role: 'assistant', content: final });
+      updateAiMsg(aiId, final, true);
+      STATE.chatLoading = false;
+      document.getElementById('chat-send').disabled = false;
+      STATE.profile.interactions++;
+      STATE.profile.memories++;
+      saveState(); updateStats();
+    }
+  );
+}
+
+let msgId = 0;
+function appendUserMsg(text) {
+  const inner = document.getElementById('chat-inner');
+  const d = document.createElement('div');
+  d.className = 'msg-wrap';
+  d.innerHTML = `<div class="msg-user"><div class="msg-user-bubble">${text.replace(/</g,'&lt;')}</div></div>`;
+  inner.appendChild(d);
+}
+function appendAiMsg(content, loading) {
+  const id = 'msg-' + (++msgId);
+  const inner = document.getElementById('chat-inner');
+  const d = document.createElement('div');
+  d.className = 'msg-wrap'; d.id = id;
+  d.innerHTML = `
+    <div class="msg-ai">
+      <div class="msg-ai-header">
+        <div class="zova-avatar">Z</div>
+        <span class="zova-label">${loading ? '<span style="animation:shimmer 1s infinite;color:#2979ff">thinking…</span>' : 'ZOVA'}</span>
+      </div>
+      <div class="msg-ai-body" id="body-${id}">
+        ${loading ? '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>' : md(content)}
+      </div>
+      <div class="feedback-row" id="fb-${id}" style="display:none">
+        <button class="fb-btn" onclick="chatFeedback('${id}','accept')">Good</button>
+        <button class="fb-btn" onclick="chatFeedback('${id}','reject')">Off</button>
+      </div>
+    </div>`;
+  inner.appendChild(d);
+  return id;
+}
+function updateAiMsg(id, content, done) {
+  const body = document.getElementById('body-' + id);
+  if (body) body.innerHTML = md(content);
+  const hdr = document.querySelector(`#${id} .zova-label`);
+  if (hdr && done) hdr.innerHTML = 'ZOVA';
+  if (done) {
+    const fb = document.getElementById('fb-' + id);
+    if (fb) fb.style.display = 'flex';
+  }
+}
+function scrollChat() {
+  const m = document.getElementById('chat-messages');
+  m.scrollTop = m.scrollHeight;
+}
+function chatFeedback(id, type) {
+  const btn = document.querySelector(`#fb-${id} .fb-btn:${type==='accept'?'first':'last'}-child`);
+  if (btn) { btn.classList.add(type); btn.textContent = type === 'accept' ? '✓ Good' : '✗ Off'; }
+  if (type === 'accept') STATE.profile.accepts++; else STATE.profile.rejects++;
+  STATE.profile.adaptations++;
+  saveState(); updateStats();
+  showToast(type === 'accept' ? '✓ Positive signal recorded' : '✗ Negative signal recorded', type === 'accept' ? 'green' : '');
+}
+
+// ══════════════════════════════════════════════
+// WRITE
+// ══════════════════════════════════════════════
+function setWriteMode(mode, btn) {
+  STATE.currentWriteMode = mode;
+  document.querySelectorAll('#tab-write .mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const placeholders = {
+    draft: 'What do you want to write about?',
+    rewrite: 'Paste text to rewrite…',
+    summarize: 'Paste text to summarize…',
+    email: 'Describe the email you need…',
+    report: 'Describe the report topic…'
+  };
+  document.getElementById('write-input').placeholder = placeholders[mode];
+  document.getElementById('write-input-label').textContent = (mode==='rewrite'||mode==='summarize') ? 'Paste Your Text' : 'Your Prompt';
+  document.getElementById('write-btn').textContent = 'Generate ' + mode.charAt(0).toUpperCase()+mode.slice(1);
+  document.getElementById('write-result-col').style.display = 'none';
+  document.getElementById('write-accepted-msg').style.display = 'none';
+}
+
+function generateWrite() {
+  const input = document.getElementById('write-input').value.trim();
+  if (!input || STATE.writeLoading) return;
+  STATE.writeLoading = true;
+  document.getElementById('write-btn').disabled = true;
+  document.getElementById('write-btn').textContent = 'Generating…';
+  document.getElementById('write-result-col').style.display = 'block';
+  document.getElementById('write-result').innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+  document.getElementById('write-accepted-msg').style.display = 'none';
+  document.getElementById('write-grid').classList.add('split');
+  document.getElementById('write-accept').className = 'fb-btn';
+  document.getElementById('write-reject').className = 'fb-btn';
+
+  const t = STATE.teachings.map(t=>`- ${t.text}`).join('\n') || 'None.';
+  const sys = `You are ZOVA's writing engine. Produce excellent, polished writing.\nMode: ${STATE.currentWriteMode}\nUser preferences:\n${t}`;
+  const prompts = {
+    draft: input, rewrite: `Rewrite and significantly improve this:\n\n${input}`,
+    summarize: `Summarize this concisely:\n\n${input}`,
+    email: `Write a professional email for: ${input}`,
+    report: `Write a structured report on: ${input}`
+  };
+
+  callClaude([{role:'user',content:prompts[STATE.currentWriteMode]}], sys,
+    chunk => { document.getElementById('write-result').innerHTML = md(chunk); },
+    final => {
+      STATE.lastWriteResult = final;
+      document.getElementById('write-result').innerHTML = md(final);
+      STATE.writeLoading = false;
+      document.getElementById('write-btn').disabled = false;
+      document.getElementById('write-btn').textContent = 'Generate ' + STATE.currentWriteMode.charAt(0).toUpperCase()+STATE.currentWriteMode.slice(1);
+      STATE.profile.writes++; STATE.profile.memories++;
+      saveState(); updateStats();
+    }
+  );
+}
+
+function writeAccept() {
+  document.getElementById('write-accept').classList.add('accept');
+  document.getElementById('write-accept').textContent = '✓ Accept';
+  document.getElementById('write-accepted-msg').style.display = 'block';
+  STATE.profile.accepts++; STATE.profile.adaptations++;
+  saveState(); updateStats();
+  showToast('✓ Style learning applied', 'green');
+}
+function writeReject() {
+  document.getElementById('write-reject').classList.add('reject');
+  document.getElementById('write-reject').textContent = '✗ Reject';
+  STATE.profile.rejects++;
+  saveState(); updateStats();
+}
+function copyResult() {
+  if (STATE.lastWriteResult) {
+    navigator.clipboard.writeText(STATE.lastWriteResult).then(() => showToast('Copied to clipboard', 'blue'));
+  }
+}
+
+// ══════════════════════════════════════════════
+// RESEARCH
+// ══════════════════════════════════════════════
+document.getElementById('research-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doResearch();
+});
+
+function doResearch() {
+  const q = document.getElementById('research-input').value.trim();
+  if (!q || STATE.researchLoading) return;
+  STATE.researchLoading = true;
+  document.getElementById('research-btn').disabled = true;
+  document.getElementById('research-btn').textContent = 'Researching…';
+  document.getElementById('research-body').innerHTML = `
+    <div class="research-loader">
+      <div class="spinner"></div>
+      <div class="spinner-label">Synthesizing intelligence…</div>
+    </div>`;
+
+  const t = STATE.teachings.map(t=>`- ${t.text}`).join('\n') || 'None.';
+  const sys = `You are ZOVA's research engine. Conduct deep, structured research.
+User preferences:\n${t}
+
+Respond ONLY with this exact JSON (no markdown fences, no extra text):
+{"title":"...","summary":"2-3 sentence summary","sections":[{"title":"...","content":"..."}],"keyInsights":["..."],"sources":["..."],"confidence":"high|medium|low"}`;
+
+  callClaude([{role:'user',content:`Research this thoroughly: ${q}`}], sys,
+    () => {},
+    final => {
+      STATE.researchLoading = false;
+      document.getElementById('research-btn').disabled = false;
+      document.getElementById('research-btn').textContent = 'Research';
+      let parsed;
+      try { parsed = JSON.parse(final.replace(/```json|```/g,'').trim()); }
+      catch { parsed = { title: q, summary: final, sections:[], keyInsights:[], sources:[], confidence:'medium' }; }
+      renderResearch(parsed);
+      STATE.profile.researches++; STATE.profile.memories++;
+      saveState(); updateStats();
+    }
+  );
+}
+
+function renderResearch(r) {
+  const conf = r.confidence === 'high' ? 'green' : r.confidence === 'low' ? 'amber' : '';
+  let html = `
+    <div class="research-result">
+      <div class="research-header">
+        <div class="research-title-row">
+          <div class="research-title">${r.title || 'Research'}</div>
+          <span class="tag ${conf}">${r.confidence || 'medium'} confidence</span>
+        </div>
+        <p class="research-summary">${r.summary || ''}</p>
+      </div>`;
+
+  if (r.keyInsights?.length) {
+    html += `<div class="section-label" style="margin-bottom:12px">Key Insights</div><div class="insights-list">`;
+    r.keyInsights.forEach((ins,i) => {
+      html += `<div class="insight-item"><div class="insight-num">${i+1}</div><div class="insight-text">${ins}</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (r.sections?.length) {
+    r.sections.forEach((sec,i) => {
+      html += `<div class="accordion">
+        <button class="accordion-btn" onclick="toggleAccordion(${i})">
+          ${sec.title}
+          <span class="accordion-chevron" id="chev-${i}">+</span>
+        </button>
+        <div class="accordion-body" id="acc-${i}">${md(sec.content)}</div>
+      </div>`;
+    });
+  }
+
+  if (r.sources?.length) {
+    html += `<div class="section-label" style="margin-top:16px;margin-bottom:10px">Sources</div><div class="sources-row">`;
+    r.sources.forEach(s => { html += `<span class="tag">${s}</span>`; });
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  document.getElementById('research-body').innerHTML = html;
+}
+
+function toggleAccordion(i) {
+  const body = document.getElementById('acc-'+i);
+  const chev = document.getElementById('chev-'+i);
+  const open = body.classList.toggle('open');
+  chev.classList.toggle('open', open);
+}
+
+// ══════════════════════════════════════════════
+// TEACH
+// ══════════════════════════════════════════════
+function setCat(cat, btn) {
+  STATE.currentCat = cat;
+  document.querySelectorAll('#cat-row .mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function fillTeach(btn) {
+  document.getElementById('teach-input').value = btn.textContent;
+  document.getElementById('teach-input').focus();
+}
+document.getElementById('teach-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTeaching();
+});
+function addTeaching() {
+  const t = document.getElementById('teach-input').value.trim();
+  if (!t) return;
+  const teaching = { text: t, category: STATE.currentCat, timestamp: new Date().toISOString() };
+  STATE.teachings.push(teaching);
+  document.getElementById('teach-input').value = '';
+  STATE.profile.memories++; STATE.profile.adaptations++;
+  saveState(); updateStats(); renderTeachings();
+  showToast('✓ Teaching saved — ZOVA adapts', 'green');
+}
+
+function renderTeachings() {
+  const list = document.getElementById('teachings-list');
+  const hist = document.getElementById('teachings-history');
+  const count = document.getElementById('teachings-count');
+  if (STATE.teachings.length === 0) { hist.style.display = 'none'; return; }
+  hist.style.display = 'block';
+  count.textContent = STATE.teachings.length;
+  list.innerHTML = '';
+  [...STATE.teachings].reverse().forEach(t => {
+    const d = document.createElement('div');
+    d.className = 'teaching-row';
+    d.innerHTML = `
+      <div style="flex:1">
+        <div class="teaching-text">${t.text}</div>
+        <div class="teaching-meta">
+          <span class="tag">${CATS[t.category] || t.category}</span>
+          <span class="teaching-date">${new Date(t.timestamp).toLocaleDateString()}</span>
+        </div>
+      </div>
+      <div class="teaching-dot"></div>`;
+    list.appendChild(d);
+  });
+}
+
+// ══════════════════════════════════════════════
+// PROFILE
+// ══════════════════════════════════════════════
+function updateProfileUI() {
+  const p = STATE.profile;
+  const n = STATE.teachings.length;
+  const iq = Math.min(n * 10, 100);
+  document.getElementById('iq-val').textContent = iq;
+  const arc = document.getElementById('iq-arc');
+  const circ = 2 * Math.PI * 32;
+  arc.setAttribute('stroke-dasharray', `${circ * iq / 100} ${circ}`);
+
+  const status = n === 0 ? 'Unconfigured' : n < 3 ? 'Learning' : n < 7 ? 'Adapting' : 'Personalized';
+  document.getElementById('profile-status').textContent = status;
+  document.getElementById('profile-desc').textContent = n === 0
+    ? 'Teach ZOVA your preferences to begin adaptive personalization.'
+    : `ZOVA has internalized ${n} teaching${n>1?'s':''} and ${p.interactions} interactions.`;
+
+  // Category tags
+  const cats = {};
+  STATE.teachings.forEach(t => cats[t.category] = (cats[t.category]||0)+1);
+  document.getElementById('profile-tags').innerHTML = Object.entries(cats)
+    .map(([c,n]) => `<span class="tag">${c}: ${n}</span>`).join('');
+
+  // Activity bars
+  const acts = [
+    {id:'chat', val: p.interactions, max:50},
+    {id:'write', val: p.writes, max:20},
+    {id:'research', val: p.researches, max:20},
+    {id:'teach', val: n, max:20},
+  ];
+  acts.forEach(a => {
+    document.getElementById('act-'+a.id).textContent = a.val;
+    document.getElementById('bar-'+a.id).style.width = Math.min((a.val/a.max)*100,100)+'%';
+  });
+
+  // Accept rate
+  const total = p.accepts + p.rejects;
+  const rate = total > 0 ? Math.round((p.accepts/total)*100) : null;
+  const rateEl = document.getElementById('accept-rate');
+  rateEl.textContent = rate !== null ? rate + '%' : '—';
+  rateEl.className = 'stat-big ' + (rate > 70 ? 'green' : rate > 40 ? '' : '');
+  document.getElementById('accept-detail').textContent = total > 0 ? `${p.accepts} accepted · ${p.rejects} rejected` : 'No feedback yet';
+  document.getElementById('learn-vel').textContent = n > 0 ? 'Active' : 'Idle';
+  document.getElementById('learn-detail').textContent = `${n} explicit preference${n!==1?'s':''}`;
+
+  // Preferences
+  const prefsSection = document.getElementById('profile-prefs-section');
+  const prefsDiv = document.getElementById('profile-prefs');
+  if (n > 0) {
+    prefsSection.style.display = 'block';
+    prefsDiv.innerHTML = STATE.teachings.map(t =>
+      `<div style="background:rgba(41,121,255,0.05);border:1px solid rgba(41,121,255,0.12);border-radius:7px;padding:7px 12px;font-size:11px;color:#999">${t.text}</div>`
+    ).join('');
+  } else { prefsSection.style.display = 'none'; }
+}
+
+// ══════════════════════════════════════════════
+// HOME UI
+// ══════════════════════════════════════════════
+function updateHomeUI() {
+  const h = new Date().getHours();
+  document.getElementById('home-greeting').textContent =
+    `Good ${h<12?'morning':h<17?'afternoon':'evening'}.`;
+  const n = STATE.teachings.length;
+  document.getElementById('home-desc').textContent = n === 0
+    ? 'ZOVA is ready to learn. Start chatting or teach me your preferences.'
+    : `I've learned ${n} preference${n>1?'s':''} about you. Every interaction sharpens my understanding.`;
+
+  const sec = document.getElementById('home-teachings-section');
+  const div = document.getElementById('home-teachings');
+  if (n > 0) {
+    sec.style.display = 'block';
+    div.innerHTML = '';
+    STATE.teachings.slice(-3).reverse().forEach(t => {
+      const d = document.createElement('div');
+      d.className = 'teaching-item';
+      d.textContent = `"${t.text}"`;
+      div.appendChild(d);
+    });
+  } else { sec.style.display = 'none'; }
+}
+
+function updateStats() {
+  const p = STATE.profile;
+  document.getElementById('stat-interactions').textContent = p.interactions;
+  document.getElementById('stat-memories').textContent = p.memories;
+  document.getElementById('stat-teachings').textContent = STATE.teachings.length;
+  document.getElementById('stat-adaptations').textContent = p.adaptations;
+  const pill = document.getElementById('memory-pill');
+  const cnt = document.getElementById('memory-count');
+  if (p.memories > 0) { pill.style.display = 'flex'; cnt.textContent = p.memories; }
+}
+
+function updateAllUI() {
+  updateStats();
+  updateHomeUI();
+  renderTeachings();
+}
+
+// ══════════════════════════════════════════════
+// API KEY
+// ══════════════════════════════════════════════
+function openApiModal() {
+  document.getElementById('api-modal').classList.add('visible');
+  document.getElementById('api-key-input').value = STATE.apiKey;
+  setTimeout(() => document.getElementById('api-key-input').focus(), 100);
+}
+function closeApiModal() {
+  document.getElementById('api-modal').classList.remove('visible');
+}
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) return;
+  STATE.apiKey = key;
+  localStorage.setItem('zova-apikey', key);
+  closeApiModal();
+  document.getElementById('api-banner').style.display = 'none';
+  showToast('✓ Connected to Claude', 'green');
+}
+document.getElementById('api-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeApiModal();
+});
+document.getElementById('api-key-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveApiKey();
+});
+
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+let toastTimeout;
+function showToast(msg, cls) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'visible' + (cls ? ' '+cls : '');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => t.classList.remove('visible'), 2800);
+}
+
+// ══════════════════════════════════════════════
+// TEXTAREA AUTO-RESIZE
+// ══════════════════════════════════════════════
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+}
+
+// ══════════════════════════════════════════════
+// KEYBOARD SHORTCUT: ESC closes modal
+// ══════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeApiModal();
+});
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Wire textarea auto-resize
+  const chatInput = document.getElementById('chat-input');
+  chatInput.addEventListener('input', () => autoResize(chatInput));
+
+  // Pre-populate greeting hour on landing
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+  document.getElementById('home-greeting').textContent = `Good ${greet}.`;
+
+  // If returning user with API key, show memory pill hint
+  if (STATE.apiKey) {
+    // key already loaded from localStorage via STATE init
+  }
+
+  // Restore all UI from saved state
+  updateAllUI();
+  renderTeachings();
+
+  // Show API banner if no key saved
+  if (!STATE.apiKey) {
+    document.getElementById('api-banner').style.display = 'flex';
+  }
+});
+</script>
+</body>
+</html>
